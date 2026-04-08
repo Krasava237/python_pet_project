@@ -14,6 +14,10 @@ from app.utils.files import ensure_media_dir
 
 app = FastAPI(title="Pet Finder API")
 
+# StaticFiles validates the target directory at import time, so create media
+# eagerly for tests and CI before mounting the route.
+ensure_media_dir()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.frontend_origins,
@@ -32,7 +36,6 @@ async def add_noindex_headers(request: Request, call_next):
     ):
         response.headers.setdefault("X-Robots-Tag", "noindex, nofollow")
     return response
-
 
 app.mount("/media", StaticFiles(directory="media"), name="media")
 app.include_router(health_router)

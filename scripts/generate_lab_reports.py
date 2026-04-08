@@ -195,6 +195,7 @@ LAB_REPORTS = [
                     "React-hooks warnings закрыты в PetsPage.tsx и PetAttachmentsPanel.tsx.",
                     "tests/conftest.py теперь принудительно подгружает .env.test поверх CI-env, чтобы pytest использовал один и тот же test-контур локально и на GitHub Actions.",
                     "Для GitHub Actions добавлен requirements-ci.txt: backend job теперь тянет только тестовый стек без тяжелых ML-зависимостей.",
+                    "В app/main.py вызов ensure_media_dir() перенесен перед app.mount('/media'), чтобы backend не падал в чистом CI-окружении на RuntimeError: Directory 'media' does not exist.",
                 ],
             ),
             (
@@ -238,13 +239,13 @@ LAB_REPORTS = [
                     "GitHub Actions виден по адресу: https://github.com/Krasava237/python_pet_project/actions",
                     "Для первичного запуска CI был создан и затем автоматически смержен PR: https://github.com/Krasava237/python_pet_project/pull/1",
                     "Deploy run после исправления workflow завершился со статусом Skipped: https://github.com/Krasava237/python_pet_project/actions/runs/24130755043",
-                    "На странице Actions видны оба workflow: CI и Deploy; для CI отдельно вынесены test-only backend install и принудительный .env.test, чтобы run не зависел от тяжелых ML-колес и внешнего PostgreSQL.",
+                    "На странице Actions видны оба workflow: CI и Deploy; для CI отдельно вынесены test-only backend install, принудительный .env.test и раннее создание media-каталога, чтобы run не зависел от тяжелых ML-колес, внешнего PostgreSQL и пустого workspace.",
                 ],
             ),
             (
                 "Что показать на защите",
                 [
-                    ".github/workflows/ci.yml: backend -> frontend -> e2e -> docker, плюс requirements-ci.txt и test-env для backend/e2e.",
+                    ".github/workflows/ci.yml и app/main.py: backend -> frontend -> e2e -> docker, плюс requirements-ci.txt, test-env и ранний ensure_media_dir() для backend/e2e.",
                     ".github/workflows/deploy.yml: workflow_run, gate по DEPLOY_* secrets и безопасный skip.",
                     "docker-compose.yml: healthcheck, depends_on и опубликованные порты.",
                     "Страницу GitHub Actions с workflow CI и Deploy в репозитории Krasava237/python_pet_project.",
