@@ -40,9 +40,7 @@ app.include_router(seo_router)
 app.include_router(users_router)
 app.include_router(pets_router)
 
-# В тестовом режиме подключаем специальные фейки и служебные эндпоинты для e2e.
 if settings.TESTING:
-    # В тестовом режиме подменяем внешние интеграции детерминированными сервисами.
     from app.pets.dependencies import get_nominatim_service, get_storage_service
     from app.testing import (
         get_test_nominatim_service,
