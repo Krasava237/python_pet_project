@@ -193,7 +193,7 @@ LAB_REPORTS = [
                     "Vitest стабилизирован под Windows через pool='threads' и maxWorkers=1 в frontend/vitest.config.ts.",
                     "React warning по react-refresh закрыт выносом AuthContext в frontend/src/app/providers/AuthContext.ts.",
                     "React-hooks warnings закрыты в PetsPage.tsx и PetAttachmentsPanel.tsx.",
-                    "Для CI выровнены версии pytest, pytest-asyncio и pytest-cov в requirements-dev.txt, чтобы backend job не падал на установке зависимостей.",
+                    "Для GitHub Actions добавлен requirements-ci.txt: backend job теперь тянет только тестовый стек без тяжелых ML-зависимостей.",
                 ],
             ),
             (
@@ -218,7 +218,7 @@ LAB_REPORTS = [
                 [
                     "Подготовлены Dockerfile для backend и frontend, docker-compose.yml, .dockerignore и .env.example.",
                     "В docker compose описаны postgres, minio, backend и frontend, а также healthcheck и зависимости между сервисами.",
-                    "CI pipeline вынесен в .github/workflows/ci.yml: backend checks, frontend lint/unit/build, e2e и docker build.",
+                    "CI pipeline вынесен в .github/workflows/ci.yml: backend checks, frontend lint/unit/build, e2e и docker build; для backend job используется requirements-ci.txt без тяжелого ML-стека.",
                     "CD pipeline вынесен в .github/workflows/deploy.yml и запускается после успешного CI на main.",
                 ],
             ),
@@ -237,13 +237,13 @@ LAB_REPORTS = [
                     "GitHub Actions виден по адресу: https://github.com/Krasava237/python_pet_project/actions",
                     "Для первичного запуска CI был создан и затем автоматически смержен PR: https://github.com/Krasava237/python_pet_project/pull/1",
                     "Deploy run после исправления workflow завершился со статусом Skipped: https://github.com/Krasava237/python_pet_project/actions/runs/24130755043",
-                    "На странице Actions видны оба workflow: CI и Deploy; старые failure относятся к ранней невалидной версии deploy.yml до фикса.",
+                    "На странице Actions видны оба workflow: CI и Deploy; для CI отдельно вынесен test-only backend install, чтобы run не зависел от тяжелых ML-колес.",
                 ],
             ),
             (
                 "Что показать на защите",
                 [
-                    ".github/workflows/ci.yml: backend -> frontend -> e2e -> docker.",
+                    ".github/workflows/ci.yml: backend -> frontend -> e2e -> docker, плюс requirements-ci.txt для backend/e2e.",
                     ".github/workflows/deploy.yml: workflow_run, gate по DEPLOY_* secrets и безопасный skip.",
                     "docker-compose.yml: healthcheck, depends_on и опубликованные порты.",
                     "Страницу GitHub Actions с workflow CI и Deploy в репозитории Krasava237/python_pet_project.",
