@@ -3,7 +3,6 @@ import torchvision.transforms as T
 from torchvision import models
 from PIL import Image
 import numpy as np
-from pathlib import Path
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

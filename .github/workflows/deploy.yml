@@ -1,0 +1,61 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      secrets.DEPLOY_HOST != '' &&
+      secrets.DEPLOY_USER != '' &&
+      secrets.DEPLOY_SSH_KEY != '' &&
+      secrets.DEPLOY_TARGET_DIR != '' &&
+      secrets.DEPLOY_ENV_FILE != ''
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository at deployed commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Configure SSH access
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Package application
+        run: |
+          tar \
+            --exclude='.git' \
+            --exclude='.venv' \
+            --exclude='frontend/node_modules' \
+            --exclude='frontend/playwright-report' \
+            --exclude='frontend/test-results' \
+            -czf deploy.tar.gz .
+
+      - name: Upload release bundle and environment
+        run: |
+          printf '%s' "${{ secrets.DEPLOY_ENV_FILE }}" > deploy.env
+          ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" "mkdir -p '${{ secrets.DEPLOY_TARGET_DIR }}'"
+          scp deploy.tar.gz "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_TARGET_DIR }}/deploy.tar.gz"
+          scp deploy.env "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_TARGET_DIR }}/.env"
+
+      - name: Run remote deployment
+        run: |
+          ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" "
+            set -e
+            cd '${{ secrets.DEPLOY_TARGET_DIR }}'
+            tar -xzf deploy.tar.gz
+            docker compose down --remove-orphans || true
+            docker compose up -d --build
+            wget -q -O - http://127.0.0.1:8080/healthz >/dev/null
+            docker image prune -f
+          "

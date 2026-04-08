@@ -1,7 +1,6 @@
 import torch
 from transformers import AutoImageProcessor, AutoModelForImageClassification
 from PIL import Image
-import numpy as np
 
 class DogBreedClassifier:
     def __init__(self):
