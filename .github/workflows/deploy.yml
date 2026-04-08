@@ -10,28 +10,46 @@ jobs:
   deploy:
     if: >
       github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'main' &&
-      secrets.DEPLOY_HOST != '' &&
-      secrets.DEPLOY_USER != '' &&
-      secrets.DEPLOY_SSH_KEY != '' &&
-      secrets.DEPLOY_TARGET_DIR != '' &&
-      secrets.DEPLOY_ENV_FILE != ''
+      github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
+    env:
+      DEPLOY_ENV_FILE: ${{ secrets.DEPLOY_ENV_FILE }}
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      DEPLOY_TARGET_DIR: ${{ secrets.DEPLOY_TARGET_DIR }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
 
     steps:
+      - name: Check deploy secrets
+        id: deploy_gate
+        shell: bash
+        run: |
+          if [[ -n "${DEPLOY_HOST}" && -n "${DEPLOY_USER}" && -n "${DEPLOY_SSH_KEY}" && -n "${DEPLOY_TARGET_DIR}" && -n "${DEPLOY_ENV_FILE}" ]]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip deploy when secrets are missing
+        if: steps.deploy_gate.outputs.ready != 'true'
+        run: echo "Skipping deploy because DEPLOY_* secrets are not configured."
+
       - name: Checkout repository at deployed commit
+        if: steps.deploy_gate.outputs.ready == 'true'
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Configure SSH access
+        if: steps.deploy_gate.outputs.ready == 'true'
         run: |
           mkdir -p ~/.ssh
-          printf '%s' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_rsa
+          printf '%s' "${{ env.DEPLOY_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -H "${{ env.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Package application
+        if: steps.deploy_gate.outputs.ready == 'true'
         run: |
           tar \
             --exclude='.git' \
@@ -42,17 +60,19 @@ jobs:
             -czf deploy.tar.gz .
 
       - name: Upload release bundle and environment
+        if: steps.deploy_gate.outputs.ready == 'true'
         run: |
-          printf '%s' "${{ secrets.DEPLOY_ENV_FILE }}" > deploy.env
-          ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" "mkdir -p '${{ secrets.DEPLOY_TARGET_DIR }}'"
-          scp deploy.tar.gz "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_TARGET_DIR }}/deploy.tar.gz"
-          scp deploy.env "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_TARGET_DIR }}/.env"
+          printf '%s' "${{ env.DEPLOY_ENV_FILE }}" > deploy.env
+          ssh "${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}" "mkdir -p '${{ env.DEPLOY_TARGET_DIR }}'"
+          scp deploy.tar.gz "${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}:${{ env.DEPLOY_TARGET_DIR }}/deploy.tar.gz"
+          scp deploy.env "${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}:${{ env.DEPLOY_TARGET_DIR }}/.env"
 
       - name: Run remote deployment
+        if: steps.deploy_gate.outputs.ready == 'true'
         run: |
-          ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" "
+          ssh "${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}" "
             set -e
-            cd '${{ secrets.DEPLOY_TARGET_DIR }}'
+            cd '${{ env.DEPLOY_TARGET_DIR }}'
             tar -xzf deploy.tar.gz
             docker compose down --remove-orphans || true
             docker compose up -d --build
