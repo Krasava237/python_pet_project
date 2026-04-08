@@ -12,7 +12,8 @@ def _load_test_environment() -> None:
     env_path = Path(__file__).resolve().parents[1] / ".env.test"
     for key, value in dotenv_values(env_path).items():
         if value is not None:
-            os.environ.setdefault(key, value)
+            # Test config must win over CI job env so pytest is reproducible everywhere.
+            os.environ[key] = value
 
 
 # Сначала подготавливаем test-env, и только потом импортируем приложение.
