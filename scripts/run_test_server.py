@@ -11,6 +11,9 @@ load_dotenv(ROOT_DIR / ".env.test", override=True)
 
 
 async def prepare_schema() -> None:
+    import app.pets.models  # noqa: F401
+    import app.users.models  # noqa: F401
+
     from app.database import Base, engine
 
     # Для e2e нам нужен готовый schema-only контур, а сами данные тесты сбрасывают через /_test/reset.

@@ -196,6 +196,7 @@ LAB_REPORTS = [
                     "tests/conftest.py теперь принудительно подгружает .env.test поверх CI-env, чтобы pytest использовал один и тот же test-контур локально и на GitHub Actions.",
                     "Для GitHub Actions добавлен requirements-ci.txt: backend job теперь тянет только тестовый стек без тяжелых ML-зависимостей.",
                     "В app/main.py вызов ensure_media_dir() перенесен перед app.mount('/media'), чтобы backend не падал в чистом CI-окружении на RuntimeError: Directory 'media' does not exist.",
+                    "В scripts/run_test_server.py перед create_all добавлен импорт ORM-моделей, чтобы e2e backend стартовал уже с таблицами users и pets.",
                 ],
             ),
             (
